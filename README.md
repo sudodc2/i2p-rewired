@@ -46,3 +46,20 @@ What this does NOT do: these are configuration hardening only. I2P's
 cryptography (ECIES-X25519, NTCP2/SSU2, garlic routing) is unchanged —
 the privacy risks it does not solve are network-layer traffic analysis,
 which no config can fully eliminate.
+
+### Boot persistence (Windows)
+
+To autostart the hardened bundle at logon — while staying visible and
+toggleable in Task Manager's **Startup** tab — add a per-user Run key:
+
+```powershell
+New-ItemProperty 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run' `
+  -Name 'I2PdBrowser' -PropertyType String `
+  -Value '"<bundle path>\StartI2PdBrowser.bat"'
+```
+
+Per-user Run keys need no admin rights, appear under
+Task Manager > Startup for easy disabling, and use the bundle's own
+config directory. Prefer this over a SYSTEM scheduled task, which is
+invisible in Task Manager and resolves the config under a different
+profile.
