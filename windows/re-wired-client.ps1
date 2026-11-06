@@ -3,6 +3,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 
 $xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="I2P RE-WIRED" Width="360" Height="600" ResizeMode="NoResize"
         WindowStartupLocation="CenterScreen" Background="#16181d" Foreground="#f4f4f5"
         FontFamily="Segoe UI">
