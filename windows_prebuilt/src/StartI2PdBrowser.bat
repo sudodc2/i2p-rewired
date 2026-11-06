@@ -3,7 +3,7 @@ REM Copyright (c) 2013-2019, The PurpleI2P Project
 REM This file is part of Purple i2pd project and licensed under BSD3
 REM See full license text in LICENSE file at top of project tree
 
-title Starting I2Pd Browser
+title I2P RE-WIRED - Starting
 set $pause=ping.exe 0.0.0.0 -n
 set $cd=%CD%
 ver| find "6." >nul && set $pause=timeout.exe /t
