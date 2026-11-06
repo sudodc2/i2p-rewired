@@ -5,7 +5,7 @@ $xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="I2P RE-WIRED" Width="390" Height="680"
-        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        WindowStyle="None" Background="Transparent"
         WindowStartupLocation="CenterScreen" Foreground="#F5FFFFFF"
         FontFamily="Segoe UI Variable Display, Segoe UI">
   <Window.Resources>
@@ -85,11 +85,8 @@ $xaml = @'
   </Window.Resources>
 
   <!-- glass window body -->
-  <Border Name="root" CornerRadius="26" Margin="10"
-          Background="#8C0F1420" BorderThickness="1" BorderBrush="{StaticResource specEdge}">
-    <Border.Effect>
-      <DropShadowEffect BlurRadius="30" ShadowDepth="0" Opacity="0.55" Color="Black"/>
-    </Border.Effect>
+  <Border Name="root" CornerRadius="0" Margin="0"
+          Background="#CC0F1420" BorderThickness="1" BorderBrush="{StaticResource specEdge}">
     <Grid>
       <StackPanel>
         <!-- top bar -->
@@ -158,25 +155,23 @@ Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
 public static class GlassFx {
-  [DllImport("user32.dll")] public static extern int SetWindowCompositionAttribute(IntPtr h, ref WCAD d);
-  [DllImport("gdi32.dll")] public static extern IntPtr CreateRoundRectRgn(int l, int t, int r, int b, int w, int h);
-  [DllImport("user32.dll")] public static extern int SetWindowRgn(IntPtr h, IntPtr r, bool redraw);
+  [DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref int val, int size);
   [StructLayout(LayoutKind.Sequential)] public struct ACCENT { public int AccentState; public int AccentFlags; public int GradientColor; public int AnimationId; }
   [StructLayout(LayoutKind.Sequential)] public struct WCAD { public int Attribute; public IntPtr Data; public int SizeOfData; }
-  public static void Enable(IntPtr hwnd, int tint) {
-    var a = new ACCENT { AccentState = 4, AccentFlags = 2, GradientColor = tint, AnimationId = 0 };
-    var sz = Marshal.SizeOf(a); var p = Marshal.AllocHGlobal(sz); Marshal.StructureToPtr(a, p, false);
-    var d = new WCAD { Attribute = 19, Data = p, SizeOfData = sz };
-    SetWindowCompositionAttribute(hwnd, ref d); Marshal.FreeHGlobal(p);
+
+  public static void Enable(IntPtr hwnd) {
+    int corner = 2;  // DWMWA_WINDOW_CORNER_PREFERENCE -> ROUND
+    DwmSetWindowAttribute(hwnd, 33, ref corner, 4);
+    int backdrop = 3; // DWMSBT_TRANSIENTWINDOW -> acrylic
+    DwmSetWindowAttribute(hwnd, 38, ref backdrop, 4);
+    int dark = 1;    // DWMWA_USE_IMMERSIVE_DARK_MODE
+    DwmSetWindowAttribute(hwnd, 20, ref dark, 4);
   }
 }
 "@
 $win.add_SourceInitialized({
   $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper($win)).Handle
-  [GlassFx]::Enable($hwnd, 0x6E0F1420)
-  $m = [System.Windows.Interop.HwndSource]::FromHwnd($hwnd).CompositionTarget.TransformToDevice
-  $rgn = [GlassFx]::CreateRoundRectRgn(0, 0, [int]($win.Width * $m.M11), [int]($win.Height * $m.M22), [int](36 * $m.M11), [int](36 * $m.M22))
-  [GlassFx]::SetWindowRgn($hwnd, $rgn, $true)
+  [GlassFx]::Enable($hwnd)
 })
 
 # drag anywhere except on a button
