@@ -85,3 +85,20 @@ traffic for anyone to breach).
 - Not a VPN: UDP-only apps and apps that ignore the system proxy are
   unaffected. Toggle it off anytime; nothing is persisted except the
   standard Windows proxy keys.
+
+-----
+
+## RE-WIRED Client (Windows)
+
+`windows/re-wired-client.ps1`: a single-window dark client that unifies
+every lane - Cloudflare WARP fast lane connect/disconnect, RE-WIRED
+Mode (Tor) toggle, I2P console and hardened browser launch, with live
+per-lane status indicators. No build step; run with:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File windows\re-wired-client.ps1
+```
+
+Requires: I2P at `B:\i2p`, the bundle at `B:\i2pdbrowser`, WARP client,
+Tor on `127.0.0.1:9050`. Adjust paths at the top of the file for other
+install layouts.
