@@ -168,6 +168,8 @@ public static class GlassFx {
     DwmSetWindowAttribute(hwnd, 38, ref backdrop, 4);
     int dark = 1;    // DWMWA_USE_IMMERSIVE_DARK_MODE
     DwmSetWindowAttribute(hwnd, 20, ref dark, 4);
+    int border = unchecked((int)0xFFFFFFFE); // DWMWA_BORDER_COLOR -> COLOR_NONE (no frame line)
+    DwmSetWindowAttribute(hwnd, 34, ref border, 4);
   }
 }
 "@
