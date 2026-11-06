@@ -92,6 +92,7 @@ $btnRing = $win.FindName('btnRing')
 $bigState = $win.FindName('bigState'); $subState = $win.FindName('subState')
 $btnTor = $win.FindName('btnTor'); $btnI2p = $win.FindName('btnI2p')
 $btnBrowser = $win.FindName('btnBrowser'); $btnI2pSvc = $win.FindName('btnI2pSvc')
+$btnAudit = $win.FindName('btnAudit')
 $btnMenu = $win.FindName('btnMenu')
 
 $warp = 'C:\Program Files\Cloudflare\Cloudflare WARP\warp-cli.exe'
