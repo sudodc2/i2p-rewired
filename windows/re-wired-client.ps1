@@ -4,7 +4,7 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 $xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="I2P RE-WIRED" Width="390" Height="680"
+        Title="I2P RE-WIRED" Width="390" Height="696"
         WindowStyle="None" Background="Transparent"
         WindowStartupLocation="CenterScreen" Foreground="#F5FFFFFF"
         FontFamily="Segoe UI Variable Display, Segoe UI">
@@ -134,7 +134,7 @@ $xaml = @'
           <Button Name="btnAudit"   Style="{StaticResource glassRow}" Content="Security audit - local checks"/>
         </StackPanel>
         <TextBlock Text="by Hashbrown" FontSize="10" Foreground="#59FFFFFF"
-                   HorizontalAlignment="Center" Margin="0,14,0,14"/>
+                   HorizontalAlignment="Center" Margin="0,16,0,18"/>
       </StackPanel>
     </Grid>
   </Border>
@@ -156,6 +156,8 @@ using System;
 using System.Runtime.InteropServices;
 public static class GlassFx {
   [DllImport("dwmapi.dll")] public static extern int DwmSetWindowAttribute(IntPtr h, int attr, ref int val, int size);
+  [DllImport("gdi32.dll")] public static extern IntPtr CreateRoundRectRgn(int l, int t, int r, int b, int w, int h);
+  [DllImport("user32.dll")] public static extern int SetWindowRgn(IntPtr h, IntPtr r, bool redraw);
   [StructLayout(LayoutKind.Sequential)] public struct ACCENT { public int AccentState; public int AccentFlags; public int GradientColor; public int AnimationId; }
   [StructLayout(LayoutKind.Sequential)] public struct WCAD { public int Attribute; public IntPtr Data; public int SizeOfData; }
 
@@ -172,6 +174,10 @@ public static class GlassFx {
 $win.add_SourceInitialized({
   $hwnd = (New-Object System.Windows.Interop.WindowInteropHelper($win)).Handle
   [GlassFx]::Enable($hwnd)
+  $m = [System.Windows.Interop.HwndSource]::FromHwnd($hwnd).CompositionTarget.TransformToDevice
+  $r = [int](18 * $m.M11)
+  $rgn = [GlassFx]::CreateRoundRectRgn(0, 0, [int]($win.ActualWidth * $m.M11) + 1, [int]($win.ActualHeight * $m.M22) + 1, $r, $r)
+  [GlassFx]::SetWindowRgn($hwnd, $rgn, $true)
 })
 
 # drag anywhere except on a button
