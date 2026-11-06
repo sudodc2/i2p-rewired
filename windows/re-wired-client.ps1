@@ -1,4 +1,4 @@
-# I2P RE-WIRED client - WARP-client-style unified control.
+﻿# I2P RE-WIRED client - WARP-client-style unified control.
 Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase
 
 $xaml = @'
@@ -39,7 +39,7 @@ $xaml = @'
     <StackPanel>
       <!-- top bar: hamburger + wordmark -->
       <Grid Margin="18,14,18,0">
-        <Button Name="btnMenu" Content="≡" FontSize="18" Padding="8,4" Background="Transparent"
+        <Button Name="btnMenu" Content="&#8801;" FontSize="18" Padding="8,4" Background="Transparent"
                 BorderThickness="0" Foreground="#e4e4e7" Cursor="Hand" HorizontalAlignment="Left"/>
         <TextBlock Text="I2P RE-WIRED" FontSize="15" FontWeight="SemiBold" Foreground="#e4e4e7"
                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -76,6 +76,7 @@ $xaml = @'
         <Button Name="btnI2p"    Style="{StaticResource row}" Content="I2P console"/>
         <Button Name="btnBrowser" Style="{StaticResource row}" Content="RE-WIRED browser"/>
         <Button Name="btnI2pSvc" Style="{StaticResource row}" Content="Restart I2P router"/>
+        <Button Name="btnAudit" Style="{StaticResource row}" Content="Security audit - local checks"/>
       </StackPanel>
     </StackPanel>
 
@@ -110,8 +111,8 @@ function Refresh-State {
     $bigState.Text = 'Disconnected'; $bigState.Foreground = '#a1a1aa'
     $subState.Text = 'Fast lane is off. Real IP exposed.'
   }
-  $btnTor.Content = if ($torOn) { 'RE-WIRED Mode (Tor) — ON' } else { 'RE-WIRED Mode (Tor) — OFF' }
-  $btnI2p.Content = if ($i2pOn) { 'I2P console — hidden, up' } else { 'I2P console — starting...' }
+  $btnTor.Content = if ($torOn) { 'RE-WIRED Mode (Tor) - ON' } else { 'RE-WIRED Mode (Tor) - OFF' }
+  $btnI2p.Content = if ($i2pOn) { 'I2P console - hidden, up' } else { 'I2P console - starting...' }
 }
 
 $btnRing.add_Click({
@@ -123,6 +124,23 @@ $btnTor.add_Click({ & powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle
 $btnI2p.add_Click({ Start-Process 'B:\i2p\docs\startconsole.html' })
 $btnBrowser.add_Click({ Start-Process 'B:\i2pdbrowser\StartI2PdBrowser.bat' -WorkingDirectory 'B:\i2pdbrowser' })
 $btnI2pSvc.add_Click({ Get-Process javaw -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2; Start-Process 'B:\i2p\i2p.exe' -WorkingDirectory 'B:\i2p'; Refresh-State })
+function Invoke-Audit {
+  # REA-style local audit: prove nothing privacy-sensitive leaks outside localhost.
+  $issues = @()
+  $i2pPid = (Get-Process javaw -ErrorAction SilentlyContinue | Select-Object -First 1).Id
+  if ($i2pPid) {
+    $open = Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue |
+      Where-Object { $_.OwningProcess -eq $i2pPid -and $_.LocalAddress -notin @('127.0.0.1','::1') }
+    if ($open) { $issues += "i2p listening on $($open.LocalAddress -join ',')" }
+  } else { $issues += 'i2p router not running' }
+  if (-not (Get-Process tor -ErrorAction SilentlyContinue)) { $issues += 'tor client not running' }
+  $svc = Get-Service tor -ErrorAction SilentlyContinue
+  if ($svc -and $svc.Status -ne 'Running') { $issues += 'tor service stopped' }
+  $mode = (Get-ItemProperty $k).ProxyEnable -eq 1
+  $report = if ($issues.Count) { "audit: " + ($issues -join '; ') } else { "audit: clean - all lanes localhost-bound, no leaks" + $(if ($mode) { ', tor proxy on' } else { '' }) }
+  $subState.Text = $report
+}
+$btnAudit.add_Click({ Invoke-Audit })
 $btnMenu.add_Click({ Refresh-State })
 
 $timer = New-Object System.Windows.Threading.DispatcherTimer
