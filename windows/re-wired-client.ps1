@@ -8,6 +8,10 @@ $xaml = @'
         WindowStyle="None" Background="Transparent"
         WindowStartupLocation="CenterScreen" Foreground="#F5FFFFFF"
         FontFamily="Segoe UI Variable Display, Segoe UI">
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="0" GlassFrameThickness="0" CornerRadius="0"
+                  ResizeBorderThickness="0" UseAeroCaptionButtons="False"/>
+  </WindowChrome.WindowChrome>
   <Window.Resources>
     <LinearGradientBrush x:Key="specEdge" StartPoint="0,0" EndPoint="0,1">
       <GradientStop Color="#73FFFFFF" Offset="0"/>
@@ -170,6 +174,8 @@ public static class GlassFx {
     DwmSetWindowAttribute(hwnd, 20, ref dark, 4);
     int border = unchecked((int)0xFFFFFFFE); // DWMWA_BORDER_COLOR -> COLOR_NONE (no frame line)
     DwmSetWindowAttribute(hwnd, 34, ref border, 4);
+    int nc = 2;      // DWMWA_NCRENDERING_POLICY -> DWMNCRP_DISABLED
+    DwmSetWindowAttribute(hwnd, 2, ref nc, 4);
   }
 }
 "@
