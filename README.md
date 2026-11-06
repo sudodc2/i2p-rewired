@@ -1,4 +1,12 @@
-# i2pdbrowser
+# I2Pd Browser — Hardened
+
+[![Discord](https://img.shields.io/discord/1556595354999332884?logo=discord&logoColor=white&label=Discord&color=5865F2)](https://discord.com/invite/JUEc8rBVvC)
+[![Upstream](https://img.shields.io/badge/upstream-PurpleI2P%2Fi2pdbrowser-blue)](https://github.com/PurpleI2P/i2pdbrowser)
+
+**A rebuilt and privacy-hardened fork of the PurpleI2P browser bundle.**
+Same hardened-Firefox + i2pd portable setup — with a privacy-tuned
+router profile applied to every shipped config. See
+[Hardened profile](#hardened-profile-this-fork) below.
 
 *Note: repository was force-pushed to remove bundled Firefox and big binaries from repository archive. Clone repository again to fetch new commit tree.*
 
