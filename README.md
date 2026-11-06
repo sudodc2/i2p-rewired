@@ -38,6 +38,7 @@ Changes vs upstream `i2pd.conf` (all three OS bundles):
 | Setting | Upstream | Hardened | Why |
 | --- | --- | --- | --- |
 | `upnp.enabled` | `true` | `false` | Stops auto-punching NAT holes and announcing an I2P router on the LAN |
+| `ntcp2.enabled` | `true` | `false` | Kills the inbound TCP listener on all interfaces - SSU2/UDP carries everything, one less fingerprintable port |
 | `notransit` | unset | `true` | Router never relays traffic for others; transit tunnels expose your router's long-lived identity to more peers |
 | `floodfill` | unset | `false` | Explicit opt-out of network-database duty (default off upstream; pinned here) |
 | `[limits] transittunnels` | unset | `0` | Hard cap matching `notransit` for defense-in-depth |
