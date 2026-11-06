@@ -64,3 +64,24 @@ Task Manager > Startup for easy disabling, and use the bundle's own
 config directory. Prefer this over a SYSTEM scheduled task, which is
 invisible in Task Manager and resolves the config under a different
 profile.
+
+-----
+
+## System-wide lane: RE-WIRED Mode (optional, Windows)
+
+I2P carries `.i2p` destinations only. For general anonymous browsing,
+RE-WIRED includes a Windows system-proxy toggle that routes all
+proxy-aware apps through a locally running Tor client
+(`127.0.0.1:9050`, `ClientOnly`, no relaying, no account, no logs -
+same architectural posture as Mullvad: there is no database of user
+traffic for anyone to breach).
+
+- `windows/tor-mode.ps1`: flips the Windows system proxy on/off and
+  shows the current state. ON routes browsers and most apps through
+  Tor; Discord, Steam and LAN addresses are bypassed so accounts are
+  not flagged and LAN stays fast.
+- Requires a Tor client listening on `9050` (Tor Expert Bundle or
+  Tor Browser's built-in client).
+- Not a VPN: UDP-only apps and apps that ignore the system proxy are
+  unaffected. Toggle it off anytime; nothing is persisted except the
+  standard Windows proxy keys.
