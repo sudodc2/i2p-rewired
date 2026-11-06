@@ -86,7 +86,7 @@ $xaml = @'
 
   <!-- glass window body -->
   <Border Name="root" CornerRadius="0" Margin="0"
-          Background="#CC0F1420" BorderThickness="1" BorderBrush="{StaticResource specEdge}">
+          Background="#CC0F1420" BorderThickness="0">
     <Grid>
       <StackPanel>
         <!-- top bar -->
