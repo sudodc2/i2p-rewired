@@ -95,8 +95,8 @@ $xaml = @'
       <StackPanel>
         <!-- top bar -->
         <Grid Margin="14,14,14,0" Height="34">
-          <Button Name="btnMenu" Style="{StaticResource glassPill}" Content="&#8801;"
-                  HorizontalAlignment="Left" ToolTip="Refresh"/>
+          <Button Name="btnMenu" Style="{StaticResource glassPill}" Content="&#8722;"
+                  HorizontalAlignment="Left" ToolTip="Minimize"/>
           <TextBlock Text="I2P RE-WIRED" FontSize="14" FontWeight="SemiBold" Foreground="#F2FFFFFF"
                      HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.95"/>
           <Button Name="btnClose" Style="{StaticResource glassPill}" Content="&#10005;" FontSize="12"
@@ -286,7 +286,7 @@ function Invoke-Audit {
   $subState.Text = $report
 }
 $btnAudit.add_Click({ Invoke-Audit })
-$btnMenu.add_Click({ Refresh-State })
+$btnMenu.add_Click({ $win.WindowState = 'Minimized' })
 
 $timer = New-Object System.Windows.Threading.DispatcherTimer
 $timer.Interval = [TimeSpan]::FromSeconds(15)
