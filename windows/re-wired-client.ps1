@@ -100,9 +100,10 @@ $xaml = @'
           <TextBlock Text="I2P RE-WIRED" FontSize="14" FontWeight="SemiBold" Foreground="#F2FFFFFF"
                      HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.95"/>
           <Button Name="btnClose" Style="{StaticResource glassPill}" Content="&#10005;" FontSize="12"
-                  HorizontalAlignment="Right" ToolTip="Close"/>
+                  HorizontalAlignment="Right" ToolTip="Hide to tray"/>
         </Grid>
 
+        <StackPanel Name="body">
         <!-- liquid glass ring (hero control) -->
         <Grid Margin="0,34,0,0" Width="196" Height="196">
           <Ellipse Name="ringGlow" Width="196" Height="196" Fill="{StaticResource glowBlue}" Opacity="0.85"/>
@@ -139,6 +140,7 @@ $xaml = @'
         </StackPanel>
         <TextBlock Text="by Hashbrown" FontSize="10" Foreground="#59FFFFFF"
                    HorizontalAlignment="Center" Margin="0,16,0,18"/>
+        </StackPanel>
       </StackPanel>
     </Grid>
   </Border>
@@ -152,7 +154,7 @@ $bigState = $win.FindName('bigState'); $subState = $win.FindName('subState')
 $btnTor = $win.FindName('btnTor'); $btnI2p = $win.FindName('btnI2p')
 $btnBrowser = $win.FindName('btnBrowser'); $btnI2pSvc = $win.FindName('btnI2pSvc')
 $btnAudit = $win.FindName('btnAudit'); $btnMenu = $win.FindName('btnMenu')
-$btnClose = $win.FindName('btnClose')
+$btnClose = $win.FindName('btnClose'); $body = $win.FindName('body')
 
 # acrylic blur-behind: the frosted glass layer (undocumented but stable since Win10)
 Add-Type -TypeDefinition @"
@@ -198,8 +200,10 @@ $win.add_MouseLeftButtonDown({
   } catch { $src = $null }
   if ($src -isnot [System.Windows.Controls.Button]) { $win.DragMove() }
 })
-$btnClose.add_Click({ $win.Close() })
-$win.add_KeyDown({ if ($_.Key -eq 'Escape') { $win.Close() } })
+$hide = { $win.WindowState = 'Minimized'; $win.ShowInTaskbar = $false }
+$show = { $win.ShowInTaskbar = $true; $win.WindowState = 'Normal'; $win.Activate() | Out-Null }
+$btnClose.add_Click($hide)
+$win.add_KeyDown({ if ($_.Key -eq 'Escape') { & $hide } })
 
 # resolve installs: env override -> common locations. Missing pieces degrade to "not installed" rows.
 $here = if ($PSScriptRoot) { $PSScriptRoot } else { '.' }
@@ -286,11 +290,30 @@ function Invoke-Audit {
   $subState.Text = $report
 }
 $btnAudit.add_Click({ Invoke-Audit })
-$btnMenu.add_Click({ $win.WindowState = 'Minimized' })
+$script:compact = $false
+$btnMenu.add_Click({
+  if ($script:compact) { $body.Visibility = 'Visible'; $win.Height = 696; $script:compact = $false }
+  else { $body.Visibility = 'Collapsed'; $win.Height = 64; $script:compact = $true }
+})
 
 $timer = New-Object System.Windows.Threading.DispatcherTimer
-$timer.Interval = [TimeSpan]::FromSeconds(15)
-$timer.add_Tick({ Refresh-State }); $timer.Start()
+$timer.Interval = [TimeSpan]::FromSeconds(30)
+$timer.add_Tick({ if ($win.IsVisible) { Refresh-State } }); $timer.Start()
+
+# system tray presence (like Mullvad): lives in the tray, X hides instead of quitting
+Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+$ni = New-Object System.Windows.Forms.NotifyIcon
+if ($ico) { $ni.Icon = New-Object System.Drawing.Icon($ico) } else { $ni.Icon = [System.Drawing.SystemIcons]::Application }
+$ni.Text = 'I2P RE-WIRED'
+$ni.Visible = $true
+$toggle = { if ($win.WindowState -eq 'Minimized') { & $show } else { & $hide } }
+$cm = New-Object System.Windows.Forms.ContextMenuStrip
+[void]$cm.Items.Add('Show / Hide', $null, $toggle)
+[void]$cm.Items.Add('Exit', $null, { $script:realExit = $true; $ni.Dispose(); $win.Close() })
+$ni.ContextMenuStrip = $cm
+$ni.add_DoubleClick($toggle)
+$script:realExit = $false
+$win.add_Closing({ if (-not $script:realExit) { $_.Cancel = $true; & $hide } })
 
 Refresh-State
 $win.ShowDialog() | Out-Null
