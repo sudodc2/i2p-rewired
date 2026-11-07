@@ -201,11 +201,16 @@ $win.add_MouseLeftButtonDown({
 $btnClose.add_Click({ $win.Close() })
 $win.add_KeyDown({ if ($_.Key -eq 'Escape') { $win.Close() } })
 
-if (Test-Path 'B:\i2p\assets\rewired.ico') {
-  $win.Icon = New-Object Windows.Media.Imaging.BitmapImage (New-Object Uri 'file:///B:/i2p/assets/rewired.ico')
-}
+# resolve installs: env override -> common locations. Missing pieces degrade to "not installed" rows.
+$here = if ($PSScriptRoot) { $PSScriptRoot } else { '.' }
+function Find-First([string[]]$paths) { foreach ($p in $paths) { if ($p -and (Test-Path $p)) { return $p } }; return $null }
+$warp   = Find-First @("$env:ProgramFiles\Cloudflare\Cloudflare WARP\warp-cli.exe")
+$i2pDir = Find-First @($env:REWIRED_I2P_DIR, 'B:\i2p', 'C:\i2p', "$env:LOCALAPPDATA\i2p", "$env:ProgramFiles\i2p")
+$torOk  = [bool](Get-Service tor -ErrorAction SilentlyContinue) -or [bool](Get-Process tor -ErrorAction SilentlyContinue)
+$bundle = Find-First @($env:REWIRED_BUNDLE_DIR, 'B:\i2pdbrowser', (Join-Path $here '..\..\..\build'), (Join-Path $here '..\..'))
+$ico    = Find-First @((Join-Path $here 'rewired.ico'), (Join-Path $here '..\windows\rewired.ico'), 'B:\i2p\assets\rewired.ico')
+if ($ico) { $win.Icon = New-Object Windows.Media.Imaging.BitmapImage (New-Object Uri "file:///$($ico -replace '\\','/')" ) }
 
-$warp = 'C:\Program Files\Cloudflare\Cloudflare WARP\warp-cli.exe'
 $k = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'
 
 function New-RingBrush([string]$c1, [string]$c2, [string]$c3) {
@@ -221,11 +226,15 @@ function New-RingBrush([string]$c1, [string]$c2, [string]$c3) {
 }
 
 function Refresh-State {
-  $warpOn = ((& $warp status 2>$null) -match 'Connected')
+  $warpOn = $warp -and ((& $warp status 2>$null) -match 'Connected')
   $torOn = (Get-ItemProperty $k).ProxyEnable -eq 1
   try { Invoke-WebRequest 'http://127.0.0.1:7657' -TimeoutSec 3 -UseBasicParsing | Out-Null; $i2pOn = $true } catch { $i2pOn = $false }
 
-  if ($warpOn) {
+  if (-not $warp) {
+    $ring.Stroke = '#40FFFFFF'; $ringArc.Visibility = 'Collapsed'; $ringGlow.Opacity = 0.3
+    $bigState.Text = 'No fast lane'; $bigState.Foreground = '#A6FFFFFF'
+    $subState.Text = 'Install Cloudflare WARP (engine only) to enable.'
+  } elseif ($warpOn) {
     $ring.Stroke = New-RingBrush '#E6BAE6FD' '#6638BDF8' '#E6A5B4FC'; $ringArc.Visibility = 'Collapsed'; $ringGlow.Opacity = 0.85
     $bigState.Text = 'Connected'; $bigState.Foreground = '#BAE6FD'
     $subState.Text = 'Your traffic exits at a Cloudflare datacenter.'
@@ -234,19 +243,32 @@ function Refresh-State {
     $bigState.Text = 'Disconnected'; $bigState.Foreground = '#A6FFFFFF'
     $subState.Text = 'Fast lane is off. Real IP exposed.'
   }
-  $btnTor.Content = if ($torOn) { 'RE-WIRED Mode (Tor) - ON' } else { 'RE-WIRED Mode (Tor) - OFF' }
-  $btnI2p.Content = if ($i2pOn) { 'I2P console - hidden, up' } else { 'I2P console - starting...' }
+  $btnTor.Content = if (-not $torOk) { 'RE-WIRED Mode (Tor) - not installed' } elseif ($torOn) { 'RE-WIRED Mode (Tor) - ON' } else { 'RE-WIRED Mode (Tor) - OFF' }
+  $btnI2p.Content = if (-not $i2pDir) { 'I2P console - not installed' } elseif ($i2pOn) { 'I2P console - hidden, up' } else { 'I2P console - starting...' }
+  $btnBrowser.Content = if ($bundle -and (Test-Path (Join-Path $bundle 'StartI2PdBrowser.bat'))) { 'RE-WIRED browser' } else { 'RE-WIRED browser - not installed' }
 }
 
 $btnRing.add_Click({
+  if (-not $warp) { return }
   $ring.Stroke = '#FCD34D'; $bigState.Text = 'Switching...'; $bigState.Foreground = '#FCD34D'
   if ((& $warp status 2>$null) -match 'Connected') { & $warp disconnect | Out-Null } else { & $warp connect | Out-Null }
   Start-Sleep 2; Refresh-State
 })
-$btnTor.add_Click({ & powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File 'B:\tor\I2P-RE-WIRED-Mode.ps1'; Start-Sleep 1; Refresh-State })
-$btnI2p.add_Click({ Start-Process 'B:\i2p\docs\startconsole.html' })
-$btnBrowser.add_Click({ Start-Process 'B:\i2pdbrowser\StartI2PdBrowser.bat' -WorkingDirectory 'B:\i2pdbrowser' })
-$btnI2pSvc.add_Click({ Get-Process javaw -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2; Start-Process 'B:\i2p\i2p.exe' -WorkingDirectory 'B:\i2p'; Refresh-State })
+$btnTor.add_Click({
+  if (-not $torOk) { $subState.Text = 'Tor client not installed'; return }
+  $cur = (Get-ItemProperty $k).ProxyEnable
+  if ($cur) {
+    Set-ItemProperty $k ProxyEnable 0
+  } else {
+    Set-ItemProperty $k ProxyServer 'socks=127.0.0.1:9050'
+    Set-ItemProperty $k ProxyEnable 1
+    Set-ItemProperty $k ProxyOverride 'localhost;127.*;10.*;172.16.*;192.168.*;<local>;*.discord.com;*.discord.gg;*.discordapp.com;*.discordapp.net;*.steampowered.com;*.steamcontent.com;*.steamstatic.com'
+  }
+  Start-Sleep 1; Refresh-State
+})
+$btnI2p.add_Click({ if ($i2pDir) { $h = Join-Path $i2pDir 'docs\startconsole.html'; if (Test-Path $h) { Start-Process $h } else { Start-Process 'http://127.0.0.1:7657' } } })
+$btnBrowser.add_Click({ if ($bundle) { $b = Join-Path $bundle 'StartI2PdBrowser.bat'; if (Test-Path $b) { Start-Process $b -WorkingDirectory $bundle } } })
+$btnI2pSvc.add_Click({ if ($i2pDir) { Get-Process javaw -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2; Start-Process (Join-Path $i2pDir 'i2p.exe') -WorkingDirectory $i2pDir; Refresh-State } })
 function Invoke-Audit {
   # REA-style local audit: prove nothing privacy-sensitive leaks outside localhost.
   $issues = @()

@@ -91,15 +91,26 @@ traffic for anyone to breach).
 
 ## RE-WIRED Client (Windows)
 
-`windows/re-wired-client.ps1`: a single-window dark client that unifies
-every lane - Cloudflare WARP fast lane connect/disconnect, RE-WIRED
-Mode (Tor) toggle, I2P console and hardened browser launch, with live
-per-lane status indicators. No build step; run with:
+`windows/re-wired-client.ps1`: a single-window Liquid Glass client that
+unifies every lane - Cloudflare WARP fast lane connect/disconnect,
+RE-WIRED Mode (Tor) toggle, I2P console and hardened browser launch,
+router restart, and a built-in local security audit. No build step:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File windows\re-wired-client.ps1
 ```
 
-Requires: I2P at `B:\i2p`, the bundle at `B:\i2pdbrowser`, WARP client,
-Tor on `127.0.0.1:9050`. Adjust paths at the top of the file for other
-install layouts.
+### Run it yourself
+
+The client auto-detects installs in common locations; missing pieces
+show as `not installed` rows instead of errors. Prerequisites:
+
+| Piece | Install |
+|---|---|
+| Fast lane | [Cloudflare WARP](https://one.cloudflare.com/) - the client only needs `warp-cli`/`warp-svc`; the vendor GUI can be deleted after install |
+| I2P lane | [Java I2P router](https://geti2p.net/) at `B:\i2p`, `C:\i2p`, `%LOCALAPPDATA%\i2p`, or `Program Files\i2p` |
+| Tor lane | [Tor Expert Bundle](https://www.torproject.org/download/tor/) as a service or process on `127.0.0.1:9050` |
+| Browser | A bundle produced by this repo's build scripts (`StartI2PdBrowser.bat`) |
+
+Non-standard locations? Point the client at them with environment
+variables: `REWIRED_I2P_DIR`, `REWIRED_BUNDLE_DIR`.
